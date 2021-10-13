@@ -74,8 +74,8 @@ for fold in folds:
                 coef0=0.0,
                 probability=True,
                 cache_size=1000,
-                decision_function_shape="ovo",
-                # break_ties=True,
+                decision_function_shape="ovr",
+                break_ties=True,
             ),
             param_grid={
                 "kernel": ["linear", "poly", "rbf", "sigmoid"],
