@@ -211,8 +211,6 @@ def train_model(
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
 
-        print()
-
     time_elapsed = time.time() - since
     print(
         "Training complete in {:.0f}m {:.0f}s".format(
