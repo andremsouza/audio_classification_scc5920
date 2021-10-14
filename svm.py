@@ -1,6 +1,7 @@
 # %%
 import numpy as np
 import pandas as pd
+import pickle
 import sklearn
 from sklearn.decomposition import PCA
 from sklearn.model_selection import GridSearchCV
@@ -43,54 +44,61 @@ fold_sizes = [
 
 # %%
 # Train and evaluate SVM
-accuracies = []
-for fold in folds:
-    # Split into train and validation
-    train_df = fold["train"]
-    val_df = fold["val"]
+try:
+    with open("svm.pkl", "rb") as f:
+        accuracies = pickle.load(f)
+except FileNotFoundError:
+    accuracies = []
+    for fold in folds:
+        # Split into train and validation
+        train_df = fold["train"]
+        val_df = fold["val"]
 
-    # Extract features
-    train_features = train_df.drop(
-        ["filename", "fold", "target", "category", "esc10", "src_file", "take"], axis=1
-    )
-    val_features = val_df.drop(
-        ["filename", "fold", "target", "category", "esc10", "src_file", "take"], axis=1
-    )
+        # Extract features
+        train_features = train_df.drop(
+            ["filename", "fold", "target", "category", "esc10", "src_file", "take"],
+            axis=1,
+        )
+        val_features = val_df.drop(
+            ["filename", "fold", "target", "category", "esc10", "src_file", "take"],
+            axis=1,
+        )
 
-    # Extract labels
-    train_labels = train_df["target"]
-    val_labels = val_df["target"]
+        # Extract labels
+        train_labels = train_df["target"]
+        val_labels = val_df["target"]
 
-    # Train SVM
-    clf = make_pipeline(
-        StandardScaler(),
-        PCA(n_components="mle"),
-        GridSearchCV(
-            estimator=SVC(
-                C=1.0,
-                kernel="rbf",
-                degree=3,
-                gamma="scale",
-                coef0=0.0,
-                probability=True,
-                cache_size=1000,
-                decision_function_shape="ovr",
-                break_ties=True,
+        # Train SVM
+        clf = make_pipeline(
+            StandardScaler(),
+            PCA(n_components="mle"),
+            GridSearchCV(
+                estimator=SVC(
+                    C=1.0,
+                    kernel="rbf",
+                    degree=3,
+                    gamma="scale",
+                    coef0=0.0,
+                    probability=True,
+                    cache_size=1000,
+                    decision_function_shape="ovr",
+                    break_ties=True,
+                ),
+                param_grid={
+                    "kernel": ["linear", "poly", "rbf", "sigmoid"],
+                    "C": [0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0],
+                    "gamma": [0.001, 0.01, 0.1, 1.0, 10.0, 100.0],
+                },
             ),
-            param_grid={
-                "kernel": ["linear", "poly", "rbf", "sigmoid"],
-                "C": [0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0],
-                "gamma": [0.001, 0.01, 0.1, 1.0, 10.0, 100.0],
-            },
-        ),
-    )
-    clf.fit(train_features, train_labels)
+        )
+        clf.fit(train_features, train_labels)
 
-    # Evaluate SVM
-    val_predictions = clf.predict(val_features)
-    accuracy = sklearn.metrics.accuracy_score(val_labels, val_predictions)
-    accuracies.append((accuracy, clf["gridsearchcv"].best_params_))
+        # Evaluate SVM
+        val_predictions = clf.predict(val_features)
+        accuracy = sklearn.metrics.accuracy_score(val_labels, val_predictions)
+        accuracies.append((accuracy, clf))
 
+    pickle.dump(accuracies, open("./svm.pkl", "wb"))
 print(accuracies)
 # %%
 
