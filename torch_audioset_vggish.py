@@ -25,10 +25,7 @@ from typing import Union
 import torch_audioset
 from torch_audioset.vggish.model import get_vggish
 import torch_audioset.params
-from torch_audioset.data.torch_input_processing import VGGishLogMelSpectrogram
 from torch_audioset.data.tflow_input_processing.vggish_utils import mel_features
-
-# from torch_audioset.data.tflow_input_processing.vggish_utils import vggish_input
 
 DATASET_DIR: str = "./ESC-50/"
 AUDIO_DIR: str = DATASET_DIR + "audio/"
@@ -245,7 +242,6 @@ fig.colorbar(img, ax=ax, format="%+2.f dB")
 
 # %%
 # Load DataLoaders
-# audio_dataset = ESC50Dataset(META_FILE, AUDIO_DIR, transform=VGGishLogMelSpectrogram())
 audio_dataset = ESC50Dataset(META_FILE, AUDIO_DIR, transform=wavfile_to_examples)
 data_loaders = [
     {
@@ -297,12 +293,11 @@ criterion = torch.nn.CrossEntropyLoss()
 # optimizer = torch.optim.RMSprop(model.classifier.parameters(), lr=0.001, momentum=0.9)
 optimizer = torch.optim.Adam(model.classifier.parameters(), lr=0.0001)
 exp_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=1)
-# exp_lr_scheduler = None
 
 # %%
 # Train models
 try:
-    models = pickle.load(open("./models/models.pkl", "rb"))
+    models = pickle.load(open("./models/vggish_models.pkl", "rb"))
 except FileNotFoundError:
     models = []
     for i in tqdm(range(len(data_loaders))):
@@ -316,12 +311,12 @@ except FileNotFoundError:
                 exp_lr_scheduler,
             )
         )
-    pickle.dump(models, open("./models/models.pkl", "wb"))
+    pickle.dump(models, open("./models/vggish_models.pkl", "wb"))
 
 # %%
 # Train best model on all folds
 try:
-    best_model = pickle.load(open("./models/best_model.pkl", "rb"))
+    best_model = pickle.load(open("./models/vggish_best_model.pkl", "rb"))
 except FileNotFoundError:
     best_model_index = np.argmax([m[1].item() for m in models])
     best_model = models[best_model_index]
@@ -337,7 +332,7 @@ except FileNotFoundError:
         )
         if best_model_tmp[1].item() > best_model[1].item():
             best_model = best_model_tmp
-    pickle.dump(best_model, open("./models/best_model.pkl", "wb"))
+    pickle.dump(best_model, open("./models/vggish_best_model.pkl", "wb"))
 
 # %%
 
