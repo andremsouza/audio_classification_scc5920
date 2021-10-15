@@ -307,6 +307,7 @@ except FileNotFoundError:
                 criterion,
                 optimizer,
                 exp_lr_scheduler,
+                num_epochs=32,
             )
         )
     pickle.dump(models, open("./models/vggish_models.pkl", "wb"))
@@ -327,6 +328,7 @@ except FileNotFoundError:
             criterion,
             optimizer,
             exp_lr_scheduler,
+            num_epochs=32,
         )
         if best_model_tmp[1].item() > best_model[1].item():
             best_model = best_model_tmp
