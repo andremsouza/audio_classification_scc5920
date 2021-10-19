@@ -1,5 +1,7 @@
+"""Setup and train SVM models with the ESC-50 dataset, using extracted audio features."""
+
 # %%
-import numpy as np
+# Imports
 import pandas as pd
 import pickle
 import sklearn
@@ -45,7 +47,7 @@ fold_sizes = [
 # %%
 # Train and evaluate SVM
 try:
-    with open("svm.pkl", "rb") as f:
+    with open("./models/svm.pkl", "rb") as f:
         accuracies = pickle.load(f)
 except FileNotFoundError:
     accuracies = []
@@ -98,8 +100,6 @@ except FileNotFoundError:
         accuracy = sklearn.metrics.accuracy_score(val_labels, val_predictions)
         accuracies.append((accuracy, clf))
 
-    pickle.dump(accuracies, open("./svm.pkl", "wb"))
+    pickle.dump(accuracies, open("./models/svm.pkl", "wb"))
 print(accuracies)
-# %%
-
 # %%
