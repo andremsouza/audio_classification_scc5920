@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# coding: utf-8
+"""Feature extractor script for the ESC-50 audio dataset,  using the librosa library."""
+
 # %% [markdown]
 
 # # Extração de *Features* de dados de áudio
@@ -19,7 +19,6 @@
 # # Imports
 
 # %%
-from datetime import datetime
 import librosa
 import librosa.display
 import multiprocessing as mp
@@ -27,69 +26,13 @@ import numpy as np
 import os
 import pandas as pd
 import re
-from scipy.signal import butter, filtfilt
 import warnings
-
-import sys
 
 # %% [markdown]
 # # Function definitions
 
 
 # %%
-def extract_data_from_filename(fname: str) -> list:
-    """Extract datetime and other fields from filename from a video."""
-    pattern: str = (
-        r"^.*ALA_(\w)"
-        + r"\)?_(\d)"
-        + r"_(\d{4})-(\d{2})-(\d{2})"
-        + r"_(\d{2})-(\d{2})-(\d{2}).*$"
-    )
-    match: re.Match = re.fullmatch(pattern, fname)  # type: ignore
-    data = [
-        datetime(
-            int(match.groups()[2]),
-            int(match.groups()[3]),
-            int(match.groups()[4]),
-            int(match.groups()[5]),
-            int(match.groups()[6]),
-            int(match.groups()[7]),
-        ),
-        fname,
-        match.groups()[0],
-        int(match.groups()[1]),
-    ]
-    return data
-
-
-def butter_highpass(data: np.ndarray, cutoff: float, fs: float, order: int = 5):
-    """
-    Design a highpass filter, removing noise from frequencies lower than
-    cutoff.
-    Args:
-    - cutoff (float) : the cutoff frequency of the filter.
-    - fs     (float) : the sampling rate.
-    - order    (int) : order of the filter, by default defined to 5.
-    """
-    # calculate the Nyquist frequency
-    nyq = 0.5 * fs
-    # design filter
-    high = cutoff / nyq
-    b, a = butter(order, high, btype="high", analog=False)
-    # returns the filter coefficients: numerator and denominator
-    y = filtfilt(b, a, data)
-    return y
-
-
-def timed_onset_samples(
-    onset_samples: np.ndarray, sr: int, min_time: float
-) -> np.ndarray:
-    """Process onset samples to have a min_time inbetween, for segmentation"""
-    processed_samples: list = [onset_samples[0]]  # First sample for comparison
-    for i in range(1, onset_samples.shape[0]):
-        if onset_samples[i] > processed_samples[-1] + sr * min_time:
-            processed_samples.append(onset_samples[i])
-    return np.array(processed_samples)
 
 
 def extract_feature_means(audio_file_path: str, verbose: bool = True) -> pd.DataFrame:
@@ -99,10 +42,6 @@ def extract_feature_means(audio_file_path: str, verbose: bool = True) -> pd.Data
     number_of_mfcc = 20
     n_fft = 2048  # FFT window size
     hop_length = 512  # number audio of frames between STFT columns
-
-    # if verbose:
-    #     print("0.Extracting info from filename...")
-    # datetime, _, ala, grupo = extract_data_from_filename(audio_file_path)
 
     if verbose:
         print("1.Importing file with librosa...")
@@ -160,9 +99,6 @@ def extract_feature_means(audio_file_path: str, verbose: bool = True) -> pd.Data
     spectral_bandwidth_4 = librosa.feature.spectral_bandwidth(signal, sr=sr, p=4)[0]
 
     audio_features = {
-        # "datetime": datetime,
-        # "ala": ala,
-        # "grupo": grupo,
         "file_name": audio_file_path,
         "zero_crossing_rate": np.mean(librosa.feature.zero_crossing_rate(signal)[0]),
         "zero_crossings": np.sum(librosa.zero_crossings(signal, pad=False)),
@@ -206,8 +142,6 @@ def extract_feature_means(audio_file_path: str, verbose: bool = True) -> pd.Data
         print("DONE:", audio_file_path)
     return df
 
-    # librosa.feature.mfcc(signal)[0, 0]
-
 
 def extract_mfcc_feature_means(
     audio_file_name: str, signal: np.ndarray, sample_rate: int, number_of_mfcc: int
@@ -222,8 +156,6 @@ def extract_mfcc_feature_means(
     }
 
     for i in range(0, number_of_mfcc):
-        # dict.update({'key3': 'geeks'})
-
         # mfcc coefficient
         key_name = "".join(["mfcc", str(i)])
         mfcc_value = np.mean(mfcc_alt[i])
@@ -258,12 +190,6 @@ fnames: list = sorted(
         if file.endswith(EXTENSION)
     ]
 )
-# pattern: str = (
-#     r"^.*ALA_(\w)"
-#     + r"\)?_(\d)"
-#     + r"_(\d{4})-(\d{2})-(\d{2})"
-#     + r"_(\d{2})-(\d{2})-(\d{2}).*$"
-# )
 pattern: str = r".*\.wav"
 matches: list = [re.fullmatch(pattern, fname) for fname in fnames]
 if len(matches) != len(fnames):
@@ -285,13 +211,6 @@ print("Number of identified audio files:", len(fnames))
 
 # %%
 audios = pd.DataFrame(data=rows, columns=columns)
-# audios.set_index(["datetime"], drop=True, inplace=True, verify_integrity=False)
-
-# %% [markdown]
-# ### Filtering by time
-
-# %%
-# audios = audios.between_time('9:00', '12:00')
 
 # %% [markdown]
 # ### Extracting features (parallel)
