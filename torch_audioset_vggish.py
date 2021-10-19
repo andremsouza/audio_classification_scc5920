@@ -1,3 +1,5 @@
+"""Setup and train VGGish with Pytorch for the ESC-50 dataset."""
+
 # %% [markdown]
 # # Imports and constants
 
@@ -11,8 +13,6 @@ import os
 import pandas as pd
 import pickle
 import resampy
-import seaborn as sns
-import sklearn
 import soundfile as sf
 
 # from sklearn.model_selection import KFold
@@ -39,7 +39,14 @@ vggish_params = torch_audioset.params.VGGishParams()
 # %%
 
 
-def wav_read(wav_file):
+def wav_read(wav_file: str):
+    """Read wav file using soundfile and return the data and sample rate.
+
+    Args:
+        wav_file (str): Path to a .wav file
+    Returns:
+        Tuple[np.array, int]: Audio data and sample rate
+    """
     wav_data, sr = sf.read(wav_file, dtype="int16")
     return wav_data, sr
 
@@ -94,7 +101,7 @@ def waveform_to_examples(data, sample_rate):
 
 
 def wavfile_to_examples(wav_file):
-    """Convenience wrapper around waveform_to_examples() for a common WAV format.
+    """Wrap around waveform_to_examples() for a common WAV format.
 
     Args:
       wav_file: String path to a file, or a file-like object. The file
@@ -114,6 +121,8 @@ def wavfile_to_examples(wav_file):
 
 
 class ESC50Dataset(torch.utils.data.Dataset):
+    """PyTorch dataset for ESC-50 dataset."""
+
     def __init__(
         self,
         annotations_file: Union[str, pd.DataFrame],
@@ -121,6 +130,7 @@ class ESC50Dataset(torch.utils.data.Dataset):
         transform=None,
         target_transform=None,
     ):
+        """Initialize the dataset."""
         if isinstance(annotations_file, str):
             self.metadata = pd.read_csv(annotations_file)
         else:
@@ -130,9 +140,11 @@ class ESC50Dataset(torch.utils.data.Dataset):
         self.target_transform = target_transform
 
     def __len__(self):
+        """Return the number of examples in the dataset."""
         return len(self.metadata)
 
     def __getitem__(self, idx):
+        """Return the idx'th example."""
         audio_path = os.path.join(self.audio_dir, self.metadata.iloc[idx]["filename"])
         waveform, _ = torchaudio.load(audio_path)
         label = self.metadata.iloc[idx]["target"]
@@ -151,6 +163,7 @@ class ESC50Dataset(torch.utils.data.Dataset):
 def train_model(
     model, dataloaders, dataset_sizes, criterion, optimizer, scheduler, num_epochs=25
 ):
+    """Train the model."""
     since = time.time()
 
     best_model_wts = copy.deepcopy(model.state_dict())
