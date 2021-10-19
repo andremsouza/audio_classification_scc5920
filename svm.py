@@ -73,7 +73,6 @@ except FileNotFoundError:
         # Train SVM
         clf = make_pipeline(
             StandardScaler(),
-            PCA(n_components="mle"),
             GridSearchCV(
                 estimator=SVC(
                     C=1.0,
